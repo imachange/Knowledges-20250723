@@ -29,6 +29,12 @@
       },
       "templater-obsidian": {
         "startupType": "instant"
+      },
+      "attachment-management": {
+        "startupType": "instant"
+      },
+      "obsidian42-brat": {
+        "startupType": "instant"
       }
     }
   }
