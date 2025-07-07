@@ -1,6 +1,12 @@
 [
   "folder-notes",
-  "dataview",
+  "plugins-annotations",
   "obsidian-front-matter-title-plugin",
-  "templater-obsidian"
+  "templater-obsidian",
+  "dataview",
+  "hide-folders",
+  "metadata-hider",
+  "lazy-plugins",
+  "obsidian42-brat",
+  "attachment-management"
 ]
