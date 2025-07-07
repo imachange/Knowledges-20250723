@@ -56,11 +56,11 @@
   "useSubmenus": true,
   "syncMove": true,
   "frontMatterTitle": {
-    "enabled": false,
+    "enabled": true,
     "explorer": true,
     "path": true
   },
-  "settingsTab": "general",
+  "settingsTab": "path",
   "supportedFileTypes": [
     "md",
     "canvas"
@@ -111,7 +111,7 @@
   "ignoreAttachmentFolder": true,
   "deleteFilesAction": "trash",
   "openSidebar": {
-    "mobile": false,
+    "mobile": true,
     "desktop": true
   },
   "highlightFolder": true,
