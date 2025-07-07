@@ -1,0 +1,5 @@
+{
+  "folder": "日暮誌",
+  "template": "Share/Templates/Archetypes/TP_LAYOUT_TIMES",
+  "format": "YYYY年/YYYY年MM月/YYYY年MM月DD日/YYYY年MM月DD日HH時mm分ss秒"
+}
