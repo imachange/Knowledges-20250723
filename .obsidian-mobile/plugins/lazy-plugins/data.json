@@ -38,6 +38,24 @@
       },
       "obsidian-meta-bind-plugin": {
         "startupType": "disabled"
+      },
+      "obsidian-another-quick-switcher": {
+        "startupType": "disabled"
+      },
+      "obsidian-auto-link-title": {
+        "startupType": "instant"
+      },
+      "markdown-attributes": {
+        "startupType": "disabled"
+      },
+      "obsidian-markdown-furigana": {
+        "startupType": "instant"
+      },
+      "tag-wrangler": {
+        "startupType": "instant"
+      },
+      "various-complements": {
+        "startupType": "instant"
       }
     }
   }
