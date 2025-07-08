@@ -1,0 +1,62 @@
+{
+  "dualConfigs": false,
+  "showConsoleLog": false,
+  "desktop": {
+    "shortDelaySeconds": 5,
+    "longDelaySeconds": 15,
+    "delayBetweenPlugins": 40,
+    "defaultStartupType": null,
+    "showDescriptions": true,
+    "enableDependencies": false,
+    "plugins": {
+      "dataview": {
+        "startupType": "instant"
+      },
+      "folder-notes": {
+        "startupType": "instant"
+      },
+      "obsidian-front-matter-title-plugin": {
+        "startupType": "instant"
+      },
+      "hide-folders": {
+        "startupType": "instant"
+      },
+      "metadata-hider": {
+        "startupType": "instant"
+      },
+      "plugins-annotations": {
+        "startupType": "instant"
+      },
+      "templater-obsidian": {
+        "startupType": "instant"
+      },
+      "attachment-management": {
+        "startupType": "instant"
+      },
+      "obsidian42-brat": {
+        "startupType": "instant"
+      },
+      "obsidian-meta-bind-plugin": {
+        "startupType": "disabled"
+      },
+      "obsidian-another-quick-switcher": {
+        "startupType": "disabled"
+      },
+      "obsidian-auto-link-title": {
+        "startupType": "instant"
+      },
+      "markdown-attributes": {
+        "startupType": "disabled"
+      },
+      "obsidian-markdown-furigana": {
+        "startupType": "instant"
+      },
+      "tag-wrangler": {
+        "startupType": "instant"
+      },
+      "various-complements": {
+        "startupType": "instant"
+      }
+    }
+  }
+}

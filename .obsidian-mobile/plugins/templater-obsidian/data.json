@@ -1,0 +1,46 @@
+{
+  "command_timeout": 5,
+  "templates_folder": "Share/Templates",
+  "templates_pairs": [
+    [
+      "",
+      ""
+    ]
+  ],
+  "trigger_on_file_creation": true,
+  "auto_jump_to_cursor": true,
+  "enable_system_commands": false,
+  "shell_path": "",
+  "user_scripts_folder": "",
+  "enable_folder_templates": false,
+  "folder_templates": [
+    {
+      "folder": "",
+      "template": ""
+    }
+  ],
+  "enable_file_templates": true,
+  "file_templates": [
+    {
+      "regex": "\\d{4}年\\d{2}月\\d{2}日\\(([月火水木金土日])\\)",
+      "template": "Share/Templates/Archetypes/TP_LAYOUT_DIARY.md"
+    },
+    {
+      "regex": "\\d{4}年\\d{2}月\\d{2}日",
+      "template": "Share/Templates/Archetypes/TP_LAYOUT_DAILY.md"
+    },
+    {
+      "regex": ".*",
+      "template": ""
+    }
+  ],
+  "syntax_highlighting": true,
+  "syntax_highlighting_mobile": true,
+  "enabled_templates_hotkeys": [
+    ""
+  ],
+  "startup_templates": [
+    ""
+  ],
+  "intellisense_render": 1
+}
