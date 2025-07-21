@@ -1,9 +1,9 @@
-name: Obsidian Vault Sync Workflow
-# このワークフローは、Obsidian Vaultのコンテンツと設定をGitで効率的に管理し、
-# GitHub Actionsによる自動化と品質保証を統合します。
+name: Vault同期ワークフロー
+# Obsidian Vaultのコンテンツと設定をGitで効率的に管理、
+# GitHub Actionsによる自動化と品質保証を統合。
 
 # ワークフロー全体のデフォルト権限を設定
-permissions: # <-- ここを追加
+permissions:
   contents: write
   pull-requests: write
 
@@ -19,29 +19,29 @@ on:
 
 jobs:
   # ジョブ1: プッシュ時のセキュリティチェック
-  # dev/edit/mainのいずれかのブランチにプッシュされた際に実行されます。
-  # コードに機密情報などが含まれていないかを確認します。
+  # dev/edit/mainいずれかのブランチへのプッシュ時に実行。
+  # コードに機密情報などの有無を確認。
   security-check:
-    name: Run Security Checks on Push
+    name: プッシュ時のセキュリティチェック
     runs-on: ubuntu-latest
-    # GitHub Actions botからのプッシュはスキップ（自動マージなどによる不要なトリガーを避けるため）
+    # GitHub Actions botからのプッシュはスキップ（自動マージなどによる不要なトリガーを回避）
     if: github.event_name == 'push' && github.event.sender.login != 'github-actions[bot]'
     permissions:
       contents: read # リポジトリの内容を読み取る権限のみ
     steps:
-      - name: Checkout repository
+      - name: リポジトリをチェックアウト
         uses: actions/checkout@v4
 
-      - name: Run Gitleaks Scan
+      - name: Gitleaksスキャンを実行
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # ジョブ2: dev/edit -> mainへの自動プルリクエスト作成
-  # devまたはeditブランチにプッシュされ、かつsecurity-checkジョブが成功した場合に実行されます。
-  # mainブランチへのプルリクエストを自動作成します。
+  # devまたはeditブランチへのプッシュ、かつsecurity-checkジョブ成功時に実行。
+  # mainブランチへのプルリクエストを自動作成。
   auto-pr:
-    name: Create PR from Feature Branch to Main
+    name: フィーチャーブランチからメインへのPR作成
     runs-on: ubuntu-latest
     needs: security-check # security-checkジョブの完了に依存
     # GitHub Actions botからのプッシュはスキップ
@@ -54,16 +54,16 @@ jobs:
       pr_url: ${{ steps.create_pr.outputs.pull-request-url }} # 作成されたPRのURLをDiscord通知ジョブに渡す
 
     steps:
-      - name: Checkout repository
+      - name: リポジトリをチェックアウト
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # 全ての履歴を取得（git logで過去のコミットメッセージを取得するため）
+          fetch-depth: 0 # 全履歴を取得（git logで過去のコミットメッセージ取得のため）
 
-      - name: Get branch name
+      - name: ブランチ名を取得
         id: branch_name
         run: echo "branch=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
 
-      - name: Get all commit subjects
+      - name: 全てのコミットサブジェクトを取得
         id: commit_subjects
         run: |
           echo "subjects<<EOF" | tee -a $GITHUB_OUTPUT > /dev/null
@@ -72,28 +72,28 @@ jobs:
           if [ -n "$LOG_OUTPUT" ]; then
             echo "$LOG_OUTPUT" >> $GITHUB_OUTPUT
           else
-            echo "  (新しいコミットメッセージはありません)" >> $GITHUB_OUTPUT
+            echo "  (新しいコミットメッセージなし)" >> $GITHUB_OUTPUT
           fi
           
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Debug Git Diff
-        # PR作成前に、editブランチとmainブランチの差分を詳細にログ出力します
-        # これにより、なぜPRが作成されないのかの理由を特定しやすくなります
+      - name: Git差分をデバッグ
+        # PR作成前に、editブランチとmainブランチの差分を詳細にログ出力。
+        # これにより、PRが作成されない理由を特定。
         run: |
-          echo "--- Debugging Git Differences ---"
-          echo "Current branch (HEAD): $(git rev-parse HEAD)"
+          echo "--- Git差分のデバッグ ---"
+          echo "現在のブランチ (HEAD): $(git rev-parse HEAD)"
           echo "origin/main HEAD: $(git rev-parse origin/main)"
           echo "origin/${{ github.ref_name }} HEAD: $(git rev-parse origin/${{ github.ref_name }})"
           echo ""
-          echo "--- git diff origin/main...${{ github.ref }} ---"
-          git diff origin/main...${{ github.ref }} || echo "No diff found between origin/main and ${{ github.ref }}"
+          echo "--- git diff origin/main...refs/heads/edit ---"
+          git diff origin/main...${{ github.ref }} || echo "origin/main と ${{ github.ref }} の間に差分なし"
           echo ""
-          echo "--- git log origin/main..${{ github.ref }} (commits in ${{ github.ref }} but not in origin/main) ---"
-          git log --pretty=format:"- %s (%h)" origin/main..${{ github.ref }} || echo "No unique commits found in ${{ github.ref }}."
+          echo "--- git log origin/main..refs/heads/edit (origin/mainにない${{ github.ref }}のコミット) ---"
+          git log --pretty=format:"- %s (%h)" origin/main..${{ github.ref }} || echo "${{ github.ref }}にユニークなコミットなし。"
           echo "---------------------------------"
 
-      - name: Create Pull Request (using github-script)
+      - name: プルリクエストを作成 (github-scriptを使用)
         id: create_pr # IDは以前の create_pr のまま維持
         uses: actions/github-script@v6 # github-script アクションを使用
         with:
@@ -145,10 +145,10 @@ jobs:
             } catch (error) {
               // PRが既に存在する場合や、差分がない場合のハンドリング
               if (error.status === 422 && error.response.data.errors && error.response.data.errors[0].message.includes('No commits between')) {
-                console.log('No new commits between source branch and base branch. Skipping PR creation.');
+                console.log('ソースブランチとベースブランチの間に新しいコミットがありません。PR作成をスキップ。');
                 core.setOutput('pull-request-url', ''); // PRが作成されなかったことを示す
               } else if (error.status === 422 && error.response.data.errors && error.response.data.errors[0].message.includes('A pull request already exists')) {
-                console.log('A pull request already exists for this branch. Skipping new PR creation.');
+                console.log('このブランチのプルリクエストが既に存在。新しいPR作成をスキップ。');
                 // 既存のPRのURLを取得して出力に設定（任意）
                 const { data: existingPrs } = await github.rest.pulls.list({
                   owner: context.repo.owner,
@@ -159,13 +159,13 @@ jobs:
                 });
                 if (existingPrs.length > 0) {
                   core.setOutput('pull-request-url', existingPrs[0].html_url);
-                  console.log(`Existing Pull Request: ${existingPrs[0].html_url}`);
+                  console.log(`既存のプルリクエスト: ${existingPrs[0].html_url}`);
                 } else {
                   core.setOutput('pull-request-url', '');
                 }
               } else {
                 // その他のエラーはステップを失敗させる
-                core.setFailed(`Failed to create pull request: ${error.message}`);
+                core.setFailed(`プルリクエストの作成に失敗: ${error.message}`);
                 throw error;
               }
             }
@@ -174,38 +174,38 @@ jobs:
           COMMIT_SUBJECTS: ${{ steps.commit_subjects.outputs.subjects }}
 
   # ジョブ3: プルリクエスト時の文法・スタイルチェック
-  # mainブランチをターゲットとするプルリクエストが作成・更新された際に実行されます。
-  # Markdownファイルなどの文法やスタイルをチェックします。
+  # mainブランチをターゲットとするPR作成・更新時に実行。
+  # Markdownファイルなどの文法やスタイルをチェック。
   lint-and-grammar-check:
-    name: Run Lint and Grammar Checks on PR
+    name: PR時のLintと文法チェック
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     permissions:
       contents: read # コード読み取り権限
       pull-requests: write # PRのステータス更新やコメント追加のために必要（任意）
     steps:
-      - name: Checkout PR branch
+      - name: PRブランチをチェックアウト
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.ref }}
 
-      - name: Run LanguageTool (Grammar Checker)
-        # 英語などの文法チェックに特化しています。
+      - name: LanguageTool (文法チェッカー) 実行
+        # 英語などの文法チェックに特化。
         uses: reviewdog/action-languagetool@v1.22.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: github-pr-review
           level: info
 
-      - name: Run Alex (Grammar Checker)
-        # 不適切な表現やインクルーシブな言葉遣いをチェックします。
+      - name: Alex (文法チェッカー) 実行
+        # 不適切な表現やインクルーシブな言葉遣いをチェック。
         uses: reviewdog/action-alex@v1.16.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: github-pr-review
           level: warning
 
-      - name: Check Markdown Files
+      - name: Markdownファイルをチェック
         id: check_md
         run: |
           if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep '\.md$'; then
@@ -214,7 +214,7 @@ jobs:
             echo "found=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: textlint-github-pr-review
+      - name: textlint-github-pr-review 実行
         if: steps.check_md.outputs.found == 'true'
         uses: tsuyoshicho/action-textlint@v3
         with:
@@ -222,7 +222,7 @@ jobs:
           reporter: github-pr-review
           textlint_flags: "**/*.md"
 
-      - name: markdownlint
+      - name: markdownlint 実行
         if: steps.check_md.outputs.found == 'true'
         uses: reviewdog/action-markdownlint@3667398db9118d7e78f7a63d10e26ce454ba5f58 # v0.26.2
         with:
@@ -230,16 +230,16 @@ jobs:
           reporter: github-pr-review
           level: warning
           
-      - name: Debug Reviewdog
+      - name: Reviewdogをデバッグ
         run: echo $REVIEWDOG_DEBUG
         env:
           REVIEWDOG_DEBUG: true
 
   # ジョブ4: main -> dev/editへの自動マージ
-  # mainブランチにプッシュされ、かつsecurity-checkジョブが成功した場合に実行されます。
-  # mainブランチの最新の内容をdevおよびeditブランチに自動的にマージします。
+  # mainブランチへのプッシュ、かつsecurity-checkジョブ成功時に実行。
+  # mainブランチの最新内容をdevおよびeditブランチに自動マージ。
   auto-merge-main:
-    name: Auto-merge Main into Feature Branches
+    name: メインブランチをフィーチャーブランチへ自動マージ
     runs-on: ubuntu-latest
     needs: security-check # security-checkジョブの完了に依存
     # GitHub Actions botからのプッシュの場合にのみ実行（mainへのマージはbotが行うため）
@@ -247,18 +247,18 @@ jobs:
     permissions:
       contents: write # ブランチへのプッシュ権限
     steps:
-      - name: Checkout repository
+      - name: リポジトリをチェックアウト
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }} # デフォルトのGitHubトークンを使用
 
-      - name: Configure Git
+      - name: Gitを設定
         run: |
           git config user.name "GitHub Actions Bot"
           git config user.email "actions@github.com"
 
-      - name: Merge main into dev
+      - name: mainをdevへマージ
         run: |
           git checkout dev
           git pull origin dev # devブランチの最新を取得（念のため）
@@ -267,7 +267,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Merge main into edit
+      - name: mainをeditへマージ
         run: |
           git checkout edit
           git pull origin edit # editブランチの最新を取得（念のため）
@@ -277,17 +277,17 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # ジョブ5: Discord通知
-  # ワークフロー全体の最後に実行され、結果をDiscordに通知します。
-  # DISCORD_WEBHOOK_URLシークレットが存在しない場合はスキップされます。
+  # ワークフロー全体の最後に実行、結果をDiscordに通知。
+  # DISCORD_WEBHOOK_URLシークレットが存在しない場合はスキップ。
   discord-notification:
-    name: Discord Notification
+    name: Discord通知
     runs-on: ubuntu-latest
-    # 全ての依存ジョブが完了した後に実行 (成功/失敗に関わらず)
+    # 全ての依存ジョブの完了後に実行 (成功/失敗に関わらず)
     needs: [security-check, auto-pr, lint-and-grammar-check, auto-merge-main]
     if: always() # 全てのジョブの結果に関わらず常に実行
 
     steps:
-      - name: Determine Workflow Status
+      - name: ワークフローステータスを決定
         id: status
         run: |
           WORKFLOW_STATUS="success"
@@ -310,19 +310,19 @@ jobs:
           echo "color=$COLOR" >> $GITHUB_OUTPUT
           echo "workflow_status=$WORKFLOW_STATUS" >> $GITHUB_OUTPUT
 
-      - name: Check for Discord Webhook URL
+      - name: Discord Webhook URLをチェック
         id: check_webhook
         run: |
           if [ -z "${{ secrets.DISCORD_WEBHOOK_URL }}" ]; then
-            echo "::warning ::DISCORD_WEBHOOK_URL secret is not set. Skipping Discord notification."
+            echo "::warning ::DISCORD_WEBHOOK_URL secretが設定されていません。Discord通知をスキップ。"
             echo "send_notification=false" >> $GITHUB_OUTPUT
           else
             echo "send_notification=true" >> $GITHUB_OUTPUT
           fi
 
-      - name: Send Discord Notification
+      - name: Discord通知を送信
         uses: rjstone/discord-webhook-notify@v1
-        # 'send_notification' フラグが 'true' の場合にのみこのステップを実行します。
+        # 'send_notification' フラグが 'true' の場合にのみこのステップを実行。
         if: ${{ steps.check_webhook.outputs.send_notification == 'true' }}
         with:
           severity: ${{ steps.status.outputs.workflow_status }}
@@ -334,10 +334,10 @@ jobs:
 
             ---
             **各ジョブの結果:**
-            - Security Check: ${{ needs.security-check.result }}
-            - Auto PR: ${{ needs.auto-pr.result }}
-            - Lint/Grammar: ${{ needs.lint-and-grammar-check.result }}
-            - Auto Merge Main: ${{ needs.auto-merge-main.result }}
+            - セキュリティチェック: ${{ needs.security-check.result }}
+            - 自動PR: ${{ needs.auto-pr.result }}
+            - Lint/文法チェック: ${{ needs.lint-and-grammar-check.result }}
+            - メインブランチ自動マージ: ${{ needs.auto-merge-main.result }}
 
             ${{ (needs.auto-pr.outputs.pr_url && needs.auto-pr.result == 'success') && format('**プルリクエスト:** {0}', needs.auto-pr.outputs.pr_url) || '' }}
 
