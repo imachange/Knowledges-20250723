@@ -71,6 +71,22 @@ jobs:
           
           echo "EOF" >> $GITHUB_OUTPUT
 
+      - name: Debug Git Diff
+        # PR作成前に、editブランチとmainブランチの差分を詳細にログ出力します
+        # これにより、なぜPRが作成されないのかの理由を特定しやすくなります
+        run: |
+          echo "--- Debugging Git Differences ---"
+          echo "Current branch (HEAD): $(git rev-parse HEAD)"
+          echo "origin/main HEAD: $(git rev-parse origin/main)"
+          echo "origin/${{ github.ref_name }} HEAD: $(git rev-parse origin/${{ github.ref_name }})"
+          echo ""
+          echo "--- git diff origin/main...${{ github.ref }} ---"
+          git diff origin/main...${{ github.ref }} || echo "No diff found between origin/main and ${{ github.ref }}"
+          echo ""
+          echo "--- git log origin/main..${{ github.ref }} (commits in ${{ github.ref }} but not in origin/main) ---"
+          git log --pretty=format:"- %s (%h)" origin/main..${{ github.ref }} || echo "No unique commits found in ${{ github.ref }}."
+          echo "---------------------------------"
+
       - name: Create Pull Request
         id: create_pr # IDを追加して出力を使えるようにする
         uses: peter-evans/create-pull-request@v6
@@ -96,6 +112,7 @@ jobs:
           branch: ${{ steps.branch_name.outputs.branch }} # PR作成元のブランチ
           base: main # PRのマージ先ブランチ
           delete-branch: false # PRマージ後にブランチを自動削除しない
+          rebase: false # <-- ここを修正: リベースを無効にし、純粋な差分でPR作成を試みる
 
   # ジョブ3: プルリクエスト時の文法・スタイルチェック
   # mainブランチをターゲットとするプルリクエストが作成・更新された際に実行されます。
@@ -251,7 +268,7 @@ jobs:
         with:
           severity: ${{ steps.status.outputs.workflow_status }}
           description: |
-            ${{ steps.status.outputs.message }}
+            ${{ steps.status.message }}
             リポジトリ: [${{ github.repository }}](${{ github.server_url }}/${{ github.repository }})
             ワークフロー: [${{ github.workflow }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
             ブランチ: `${{ github.ref_name }}`
