@@ -1,4 +1,4 @@
-\name: Obsidian Vault Sync Workflow
+name: Obsidian Vault Sync Workflow
 # このワークフローは、Obsidian Vaultのコンテンツと設定をGitで効率的に管理し、
 # GitHub Actionsによる自動化と品質保証を統合します。
 
