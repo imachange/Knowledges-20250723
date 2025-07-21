@@ -122,21 +122,35 @@ jobs:
           reporter: github-pr-review
           level: warning
 
-      - name: Run textlint
-        # 日本語の文章校正に特に有用です。
+      - name: Check Markdown Files
+        id: check_md
+        run: |
+          if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep '\.md$'; then
+            echo "found=true" >> $GITHUB_OUTPUT
+          else
+            echo "found=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: textlint-github-pr-review
+        if: steps.check_md.outputs.found == 'true'
         uses: tsuyoshicho/action-textlint@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: github-pr-review
-          textlint_flags: "**/*.md" # チェック対象のファイルパターン
-          level: warning
+          textlint_flags: "**/*.md"
 
       - name: markdownlint
+        if: steps.check_md.outputs.found == 'true'
         uses: reviewdog/action-markdownlint@3667398db9118d7e78f7a63d10e26ce454ba5f58 # v0.26.2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: github-pr-review
           level: warning
+          
+      - name: Debug Reviewdog
+        run: echo $REVIEWDOG_DEBUG
+        env:
+          REVIEWDOG_DEBUG: true
 
   # ジョブ4: main -> dev/editへの自動マージ
   # mainブランチにプッシュされ、かつsecurity-checkジョブが成功した場合に実行されます。
