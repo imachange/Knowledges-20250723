@@ -112,8 +112,8 @@ jobs:
           branch: ${{ steps.branch_name.outputs.branch }} # PR作成元のブランチ
           base: main # PRのマージ先ブランチ
           delete-branch: false # PRマージ後にブランチを自動削除しない
-          # rebase: false # <-- この行は削除します。アクションにこの入力はありません。
-          update-branch: false # <-- この行を追加します。自動的なブランチ更新を無効にします。
+          update-branch: false # <-- この行は削除します。アクションにこの入力はありません。
+          rebase: false # <-- この行を再度追加します。これが正しいオプションです。
 
   # ジョブ3: プルリクエスト時の文法・スタイルチェック
   # mainブランチをターゲットとするプルリクエストが作成・更新された際に実行されます。
