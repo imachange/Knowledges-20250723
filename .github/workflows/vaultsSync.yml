@@ -2,6 +2,11 @@ name: Obsidian Vault Sync Workflow
 # このワークフローは、Obsidian Vaultのコンテンツと設定をGitで効率的に管理し、
 # GitHub Actionsによる自動化と品質保証を統合します。
 
+# ワークフロー全体のデフォルト権限を設定
+permissions: # <-- ここを追加
+  contents: write
+  pull-requests: write
+
 on:
   push:
     branches:
@@ -41,6 +46,7 @@ jobs:
     needs: security-check # security-checkジョブの完了に依存
     # GitHub Actions botからのプッシュはスキップ
     if: github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/edit') && github.event.sender.login != 'github-actions[bot]'
+    # ジョブレベルの権限はワークフローレベルの権限を上書きするため、ここでは明示的に記述を維持
     permissions:
       contents: write # リポジトリへの書き込み権限（コミット）
       pull-requests: write # プルリクエストの作成権限
