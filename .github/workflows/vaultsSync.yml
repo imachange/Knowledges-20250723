@@ -1,4 +1,4 @@
-name: Obsidian Vault Sync Workflow
+\name: Obsidian Vault Sync Workflow
 # このワークフローは、Obsidian Vaultのコンテンツと設定をGitで効率的に管理し、
 # GitHub Actionsによる自動化と品質保証を統合します。
 
@@ -28,9 +28,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run Gitleaks Scan
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # コミット履歴内のAPIキー、パスワードなどの機密情報を検出します。
+        uses: zricethezav/gitleaks-action@v1.9.0
+        # Gitleaksの設定ファイルがある場合は、withオプションで指定できます。
+        # with:
+        #   config: .gitleaks.toml
 
   # ジョブ2: dev/edit -> mainへの自動プルリクエスト作成
   # devまたはeditブランチにプッシュされ、かつsecurity-checkジョブが成功した場合に実行されます。
@@ -60,7 +62,7 @@ jobs:
       - name: Get all commit subjects
         id: commit_subjects
         run: |
-          echo "subjects<<EOF" >> $GITHUB_OUTPUT
+          echo "subjects<<EOF" | tee -a $GITHUB_OUTPUT > /dev/null # ここを修正
           git log --pretty=format:"- %s" origin/main..${{ github.ref }} >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
@@ -122,35 +124,21 @@ jobs:
           reporter: github-pr-review
           level: warning
 
-      - name: Check Markdown Files
-        id: check_md
-        run: |
-          if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep '\.md$'; then
-            echo "found=true" >> $GITHUB_OUTPUT
-          else
-            echo "found=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: textlint-github-pr-review
-        if: steps.check_md.outputs.found == 'true'
+      - name: Run textlint
+        # 日本語の文章校正に特に有用です。
         uses: tsuyoshicho/action-textlint@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: github-pr-review
-          textlint_flags: "**/*.md"
+          textlint_flags: "**/*.md" # チェック対象のファイルパターン
+          level: warning
 
       - name: markdownlint
-        if: steps.check_md.outputs.found == 'true'
         uses: reviewdog/action-markdownlint@3667398db9118d7e78f7a63d10e26ce454ba5f58 # v0.26.2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: github-pr-review
           level: warning
-          
-      - name: Debug Reviewdog
-        run: echo $REVIEWDOG_DEBUG
-        env:
-          REVIEWDOG_DEBUG: true
 
   # ジョブ4: main -> dev/editへの自動マージ
   # mainブランチにプッシュされ、かつsecurity-checkジョブが成功した場合に実行されます。
@@ -207,6 +195,7 @@ jobs:
       - name: Determine Workflow Status
         id: status
         run: |
+          # 依存するジョブのいずれかが失敗した場合、ワークフロー全体を失敗と判断
           WORKFLOW_STATUS="success"
           if [ "${{ needs.security-check.result }}" == "failure" ] || \
              [ "${{ needs.auto-pr.result }}" == "failure" ] || \
@@ -230,6 +219,8 @@ jobs:
       - name: Check for Discord Webhook URL
         id: check_webhook
         run: |
+          # DISCORD_WEBHOOK_URLシークレットが存在するかどうかをチェックします。
+          # 存在しない場合、警告ログを出力し、通知をスキップするフラグを設定します。
           if [ -z "${{ secrets.DISCORD_WEBHOOK_URL }}" ]; then
             echo "::warning ::DISCORD_WEBHOOK_URL secret is not set. Skipping Discord notification."
             echo "send_notification=false" >> $GITHUB_OUTPUT
