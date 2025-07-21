@@ -60,7 +60,6 @@ jobs:
       - name: Get all commit subjects
         id: commit_subjects
         run: |
-          # mainブランチにない、現在のブランチの全てのコミット件名を取得します。
           echo "subjects<<EOF" >> $GITHUB_OUTPUT
           git log --pretty=format:"- %s" origin/main..${{ github.ref }} >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
@@ -194,7 +193,6 @@ jobs:
       - name: Determine Workflow Status
         id: status
         run: |
-          # 依存するジョブのいずれかが失敗した場合、ワークフロー全体を失敗と判断
           WORKFLOW_STATUS="success"
           if [ "${{ needs.security-check.result }}" == "failure" ] || \
              [ "${{ needs.auto-pr.result }}" == "failure" ] || \
@@ -218,8 +216,6 @@ jobs:
       - name: Check for Discord Webhook URL
         id: check_webhook
         run: |
-          # DISCORD_WEBHOOK_URLシークレットが存在するかどうかをチェックします。
-          # 存在しない場合、警告ログを出力し、通知をスキップするフラグを設定します。
           if [ -z "${{ secrets.DISCORD_WEBHOOK_URL }}" ]; then
             echo "::warning ::DISCORD_WEBHOOK_URL secret is not set. Skipping Discord notification."
             echo "send_notification=false" >> $GITHUB_OUTPUT
