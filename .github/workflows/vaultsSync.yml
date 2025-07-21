@@ -42,7 +42,7 @@ jobs:
     # GitHub Actions botからのプッシュはスキップ
     if: github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/edit') && github.event.sender.login != 'github-actions[bot]'
     permissions:
-      contents: write # リポジトリへの書き込み権限（コミット）
+      contents: write # リポジリへの書き込み権限（コミット）
       pull-requests: write # プルリクエストの作成権限
     outputs:
       pr_url: ${{ steps.create_pr.outputs.pull-request-url }} # 作成されたPRのURLをDiscord通知ジョブに渡す
@@ -89,7 +89,7 @@ jobs:
 
       - name: Create Pull Request
         id: create_pr # IDを追加して出力を使えるようにする
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v6.1.0 # <-- ここを修正: 特定のパッチバージョンを指定
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "feat(${steps.branch_name.outputs.branch}): Sync changes from ${steps.branch_name.outputs.branch}"
@@ -112,7 +112,7 @@ jobs:
           branch: ${{ steps.branch_name.outputs.branch }} # PR作成元のブランチ
           base: main # PRのマージ先ブランチ
           delete-branch: false # PRマージ後にブランチを自動削除しない
-          update-branch: false # <-- この行は削除します。アクションにこの入力はありません。
+          # update-branch: false # <-- この行は削除します。アクションにこの入力はありません。
           rebase: false # <-- この行を再度追加します。これが正しいオプションです。
 
   # ジョブ3: プルリクエスト時の文法・スタイルチェック
