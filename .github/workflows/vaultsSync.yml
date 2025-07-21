@@ -42,7 +42,7 @@ jobs:
     # GitHub Actions botからのプッシュはスキップ
     if: github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/edit') && github.event.sender.login != 'github-actions[bot]'
     permissions:
-      contents: write # リポジリへの書き込み権限（コミット）
+      contents: write # リポジトリへの書き込み権限（コミット）
       pull-requests: write # プルリクエストの作成権限
     outputs:
       pr_url: ${{ steps.create_pr.outputs.pull-request-url }} # 作成されたPRのURLをDiscord通知ジョブに渡す
@@ -87,33 +87,85 @@ jobs:
           git log --pretty=format:"- %s (%h)" origin/main..${{ github.ref }} || echo "No unique commits found in ${{ github.ref }}."
           echo "---------------------------------"
 
-      - name: Create Pull Request
-        id: create_pr # IDを追加して出力を使えるようにする
-        uses: peter-evans/create-pull-request@v6.1.0 # <-- ここを修正: 特定のパッチバージョンを指定
+      - name: Create Pull Request (using github-script)
+        id: create_pr # IDは以前の create_pr のまま維持
+        uses: actions/github-script@v6 # github-script アクションを使用
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "feat(${steps.branch_name.outputs.branch}): Sync changes from ${steps.branch_name.outputs.branch}"
-          title: "Merge ${{ steps.branch_name.outputs.branch }} into main"
-          body: |
-            自動生成されたプルリクエストです。
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // 前のステップからの出力を環境変数として取得
+            const branchName = process.env.BRANCH_NAME;
+            const commitSubjects = process.env.COMMIT_SUBJECTS;
+
+            const title = `Merge ${branchName} into main`;
+            const body = `自動生成されたプルリクエストです。
             **プッシュ時のセキュリティチェックが正常に完了しました。**
 
-            **ブランチ**: `${{ steps.branch_name.outputs.branch }}`
+            **ブランチ**: \`${branchName}\`
 
-            このプルリクエストは、以下の変更を `main` ブランチに同期します。
-            - プラグインやテンプレートの追加・更新 (`dev` ブランチ)
-            - 日記や記事の追加・編集 (`edit` ブランチ)
+            このプルリクエストは、以下の変更を \`main\` ブランチに同期します。
+            - プラグインやテンプレートの追加・更新 (\`dev\` ブランチ)
+            - 日記や記事の追加・編集 (\`edit\` ブランチ)
 
             **含まれる主な変更点:**
-            ${{ steps.commit_subjects.outputs.subjects }}
+            ${commitSubjects}
 
-            レビュー後、`squash and merge` でマージしてください。
-          labels: auto-pr
-          branch: ${{ steps.branch_name.outputs.branch }} # PR作成元のブランチ
-          base: main # PRのマージ先ブランチ
-          delete-branch: false # PRマージ後にブランチを自動削除しない
-          # update-branch: false # <-- この行は削除します。アクションにこの入力はありません。
-          rebase: false # <-- この行を再度追加します。これが正しいオプションです。
+            レビュー後、\`squash and merge\` でマージしてください。`;
+
+            try {
+              // GitHub API を直接呼び出してプルリクエストを作成
+              const { data: pullRequest } = await github.rest.pulls.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                head: branchName, // 作成元ブランチ
+                base: 'main',     // マージ先ブランチ
+                body,
+                draft: false, // ドラフトPRとして作成しない
+              });
+
+              console.log(`Pull Request created: ${pullRequest.html_url}`);
+              // 作成されたPRのURLをジョブの出力として設定
+              core.setOutput('pull-request-url', pullRequest.html_url);
+
+              // 作成されたPRにラベルを追加
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pullRequest.number,
+                labels: ['auto-pr']
+              });
+
+            } catch (error) {
+              // PRが既に存在する場合や、差分がない場合のハンドリング
+              if (error.status === 422 && error.response.data.errors && error.response.data.errors[0].message.includes('No commits between')) {
+                console.log('No new commits between source branch and base branch. Skipping PR creation.');
+                core.setOutput('pull-request-url', ''); // PRが作成されなかったことを示す
+              } else if (error.status === 422 && error.response.data.errors && error.response.data.errors[0].message.includes('A pull request already exists')) {
+                console.log('A pull request already exists for this branch. Skipping new PR creation.');
+                // 既存のPRのURLを取得して出力に設定（任意）
+                const { data: existingPrs } = await github.rest.pulls.list({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  head: `${context.repo.owner}:${branchName}`,
+                  base: 'main',
+                  state: 'open'
+                });
+                if (existingPrs.length > 0) {
+                  core.setOutput('pull-request-url', existingPrs[0].html_url);
+                  console.log(`Existing Pull Request: ${existingPrs[0].html_url}`);
+                } else {
+                  core.setOutput('pull-request-url', '');
+                }
+              } else {
+                // その他のエラーはステップを失敗させる
+                core.setFailed(`Failed to create pull request: ${error.message}`);
+                throw error;
+              }
+            }
+        env: # 前のステップからの出力を環境変数として github-script に渡す
+          BRANCH_NAME: ${{ steps.branch_name.outputs.branch }}
+          COMMIT_SUBJECTS: ${{ steps.commit_subjects.outputs.subjects }}
 
   # ジョブ3: プルリクエスト時の文法・スタイルチェック
   # mainブランチをターゲットとするプルリクエストが作成・更新された際に実行されます。
