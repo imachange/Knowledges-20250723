@@ -60,7 +60,7 @@ jobs:
       - name: Get all commit subjects
         id: commit_subjects
         run: |
-          echo "subjects<<EOF" | tee -a $GITHUB_OUTPUT > /dev/null # ここを修正
+          echo "subjects<<EOF" | tee -a $GITHUB_OUTPUT > /dev/null
           git log --pretty=format:"- %s" origin/main..${{ github.ref }} >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
