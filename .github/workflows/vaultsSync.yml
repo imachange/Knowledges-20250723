@@ -60,8 +60,11 @@ jobs:
       - name: Get all commit subjects
         id: commit_subjects
         run: |
+          # ヒアドキュメントの開始デリミタを正しく出力します（この行は1つだけ！）
           echo "subjects<<EOF" | tee -a $GITHUB_OUTPUT > /dev/null
+          # git log の出力を取得します
           git log --pretty=format:"- %s" origin/main..${{ github.ref }} >> $GITHUB_OUTPUT
+          # ヒアドキュメントの終了デリミタです
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create Pull Request
