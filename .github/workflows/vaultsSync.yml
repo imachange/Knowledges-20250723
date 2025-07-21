@@ -60,20 +60,15 @@ jobs:
       - name: Get all commit subjects
         id: commit_subjects
         run: |
-          # ヒアドキュメントの開始デリミタを正しく出力します
           echo "subjects<<EOF" | tee -a $GITHUB_OUTPUT > /dev/null
-          
-          # git log の出力を一時変数に格納
           LOG_OUTPUT=$(git log --pretty=format:"- %s" origin/main..${{ github.ref }})
           
-          # LOG_OUTPUTが空かどうかをチェックし、適切なメッセージを出力
           if [ -n "$LOG_OUTPUT" ]; then
             echo "$LOG_OUTPUT" >> $GITHUB_OUTPUT
           else
             echo "  (新しいコミットメッセージはありません)" >> $GITHUB_OUTPUT
           fi
           
-          # ヒアドキュメントの終了デリミタです
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create Pull Request
