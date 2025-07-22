@@ -3,14 +3,13 @@ name: Biome コードレビュー # ワークフローの日本語名
 on:
   pull_request:
     # JavaScript/TypeScriptファイルが変更された場合にのみワークフローを実行
+    # .obsidianで始まるディレクトリ以下の変更は無視する
     paths:
       - '**/*.js'
       - '**/*.jsx'
       - '**/*.ts'
       - '**/*.tsx'
-    # .obsidianで始まるディレクトリ以下の変更は無視する
-    paths-ignore:
-      - '.obsidian*/**'
+      - '!.obsidian*/**' # .obsidianで始まるディレクトリ以下のファイルを明示的に除外
 
 jobs:
   biome:
@@ -23,7 +22,7 @@ jobs:
     steps:
       - # ステップの日本語名: コードをリポジトリからチェックアウト
         name: コードをチェックアウト
-        uses: actions/checkout@v4
+        uses: actions:checkout@v4
 
       - # ステップの日本語名: Biomeを使ってコードをレビューし、結果をプルリクエストにコメント
         name: Biomeでコードをレビュー
