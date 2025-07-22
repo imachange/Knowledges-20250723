@@ -22,7 +22,7 @@ jobs:
     steps:
       - # ステップの日本語名: コードをリポジトリからチェックアウト
         name: コードをチェックアウト
-        uses: actions:checkout@v4
+        uses: actions/checkout@v4 # コロンをスラッシュに修正しました
 
       - # ステップの日本語名: Biomeを使ってコードをレビューし、結果をプルリクエストにコメント
         name: Biomeでコードをレビュー
